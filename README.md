@@ -1,0 +1,2 @@
+# aws_cost_visualization_by_quicksight
+QuickSightを使用したAWS費用の可視化を実装するためのリポジトリ
