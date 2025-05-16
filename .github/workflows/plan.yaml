@@ -21,7 +21,7 @@ jobs:
       ACCOUNT_1_ROLE_ARN: "${{ secrets.ACCOUNT_1_ROLE_ARN }}"
       TF_VAR_destination_account_id: ${{ secrets.DESTINATION_ACCOUNT_ID }}
       TF_VAR_destination_bucket_name: ${{ secrets.DESTINATION_BUCKET_NAME }}
-      TF_VAR_source_account_list: ${{ secrets.SOURCE_ACCOUNT_LIST }}
+      TF_VAR_source_account_list: '["${{ secrets.SOURCE_ACCOUNT_LIST }}"]'
       TF_VAR_schedule: ${{ vars.SCHEDULE }}
 
     steps:
