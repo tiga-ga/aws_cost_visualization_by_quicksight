@@ -26,7 +26,7 @@ jobs:
     steps:
       - name: Set source account list
         run: |
-          echo "TF_VAR_source_account_list=[$(echo ${{ vars.SOURCE_ACCOUNT_LIST }} | tr ',' '\n' | sed 's/^/"/;s/$/"/' | tr '\n' ',')]" >> $GITHUB_ENV
+          echo "TF_VAR_source_account_list=[$(echo ${{ vars.SOURCE_ACCOUNT_LIST }} | sed 's/"//g' | tr ',' '\n' | sed 's/^/"/;s/$/"/' | tr '\n' ',')]" >> $GITHUB_ENV
       
       - name: Checkout repository
         uses: actions/checkout@v3
