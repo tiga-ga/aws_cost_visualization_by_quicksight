@@ -43,7 +43,7 @@ jobs:
         run: |
           cd environments/AccountManagement
           terraform init -reconfigure
-          terraform apply -auto-approve -var-file=/workspace/terraform.tfvars
+          terraform apply -auto-approve
           
       - name: Configure AWS Credentials(Account1)
         uses: aws-actions/configure-aws-credentials@v4
@@ -55,5 +55,5 @@ jobs:
         run: |
           cd environments/Account1
           terraform init -reconfigure
-          terraform apply -auto-approve -var-file=/workspace/terraform.tfvars
+          terraform apply -auto-approve
           
