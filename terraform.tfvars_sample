@@ -1,0 +1,10 @@
+destination_account_id = "111111111111"  # 費用レポートを保存するAWSアカウントID
+
+destination_bucket_name = "golila-management"  # 費用レポートを保存するS3バケット名
+
+source_account_list = [
+  "111111111111",  # 例: アカウントIDをここに追加
+  "222222222222",  # 必要に応じて他のアカウントIDを追加
+]
+
+schedule = "cron(0 0 ? * MON *)"  # 費用レポートを最新状態にするGlueジョブの実行期間を設定

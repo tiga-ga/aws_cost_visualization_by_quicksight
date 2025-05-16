@@ -1,0 +1,8 @@
+services:
+  terraform:
+    image: hashicorp/terraform:1.8.3
+    volumes:
+      - .:/workspace
+    # working_dir: /workspace/environments/AccountManagement
+    working_dir: /workspace/environments/Account1
+    env_file: .env

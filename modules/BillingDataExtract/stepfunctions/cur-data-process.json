@@ -1,0 +1,139 @@
+{
+  "Comment": "CUR data processing workflow",
+  "StartAt": "ProcessAccounts",
+  "States": {
+    "ProcessAccounts": {
+      "Type": "Map",
+      "InputPath": "$",
+      "ItemsPath": "$.source_account_id",
+      "MaxConcurrency": 5,
+      "Parameters": {
+        "account_id.$": "$$.Map.Item.Value",
+        "bucket_name.$": "$.bucket_name"
+      },
+      "Iterator": {
+        "StartAt": "CrawlerName&JobName",
+        "States": {
+          "CrawlerName&JobName": {
+            "Type": "Pass",
+            "Parameters": {
+              "CrawlerName.$": "States.Format('cur-crawler-{}', $.account_id)",
+              "JobName.$": "States.Format('extract-cur-data-{}', $.account_id)",
+              "BucketName.$": "$.bucket_name"
+            },
+            "Next": "StartCrawler"
+          },
+          "StartCrawler": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:glue:startCrawler",
+            "Parameters": {
+              "Name.$": "$.CrawlerName"
+            },
+            "ResultPath": "$.StartResult",
+            "Next": "StoreCrawlerName"
+          },
+          "StoreCrawlerName": {
+            "Type": "Pass",
+            "Parameters": {
+              "CrawlerName.$": "$.CrawlerName"
+            },
+            "ResultPath": "$.CrawlerOutput",
+            "Next": "WaitForCrawler"
+          },
+          "WaitForCrawler": {
+            "Type": "Wait",
+            "Seconds": 30,
+            "Next": "CheckCrawlerStatus"
+          },
+          "CheckCrawlerStatus": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:glue:getCrawler",
+            "Parameters": {
+              "Name.$": "$.CrawlerOutput.CrawlerName"
+            },
+            "ResultPath": "$.CrawlerStatus",
+            "Next": "IsCrawlerComplete"
+          },
+          "IsCrawlerComplete": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Variable": "$.CrawlerStatus.Crawler.State",
+                "StringEquals": "READY",
+                "Next": "StartGlueJob"
+              }
+            ],
+            "Default": "WaitForCrawler"
+          },
+          "StartGlueJob": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:glue:startJobRun",
+            "Parameters": {
+              "JobName.$": "$.JobName"
+            },
+            "ResultPath": "$.JobRunId",
+            "Next": "WaitForJobCompletion"
+          },
+          "WaitForJobCompletion": {
+            "Type": "Wait",
+            "Seconds": 30,
+            "Next": "CheckJobStatus"
+          },
+          "CheckJobStatus": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:glue:getJobRun",
+            "Parameters": {
+              "JobName.$": "$.JobName",
+              "RunId.$": "$.JobRunId.JobRunId"
+            },
+            "ResultPath": "$.JobStatus",
+            "Next": "IsJobComplete"
+          },
+          "IsJobComplete": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Variable": "$.JobStatus.JobRun.JobRunState",
+                "StringEquals": "SUCCEEDED",
+                "Next": "JobSucceeded"
+              },
+              {
+                "And": [
+                  {
+                    "Variable": "$.JobStatus.JobRun.JobRunState",
+                    "StringEquals": "FAILED"
+                  }
+                ],
+                "Next": "JobFailed"
+              },
+              {
+                "And": [
+                  {
+                    "Variable": "$.JobStatus.JobRun.JobRunState",
+                    "StringEquals": "STOPPED"
+                  }
+                ],
+                "Next": "JobStopped"
+              }
+            ],
+            "Default": "WaitForJobCompletion"
+          },
+          "JobSucceeded": {
+            "Type": "Pass",
+            "Comment": "Job succeeded",
+            "End": true
+          },
+          "JobFailed": {
+            "Type": "Fail",
+            "Comment": "Job failed"
+          },
+          "JobStopped": {
+            "Type": "Fail",
+            "Comment": "Job was stopped"
+          }
+        }
+      },
+      "End": true
+    }
+  }
+}
